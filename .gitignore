@@ -1,0 +1,20 @@
+# Unity files
+/TicTacToe/[Ll]ibrary/
+/TicTacToe/[Tt]emp/
+/TicTacToe/[Oo]bj/
+/TicTacToe/[Bb]uild/
+/TicTacToe/[Bb]uilds/
+/TicTacToe/[Ll]ogs/
+/TicTacToe/[Uu]ser[Ss]ettings/
+
+# Auto generated projects
+/TicTacToe/*.csproj
+/TicTacToe/*.sln
+
+# Visual Studio files
+.vs/
+bin/
+obj/
+
+
+
