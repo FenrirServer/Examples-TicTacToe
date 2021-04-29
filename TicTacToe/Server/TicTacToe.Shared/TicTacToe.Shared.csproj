@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fenrir.Multiplayer" Version="1.0.0" />
+    <PackageReference Include="Fenrir.Multiplayer" Version="1.0.1" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">

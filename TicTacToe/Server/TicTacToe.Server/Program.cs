@@ -1,3 +1,4 @@
+using Fenrir.Multiplayer.Rooms;
 using Fenrir.Multiplayer.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ namespace TicTacToe.Server
                 .AddSingleton<Fenrir.Multiplayer.Logging.ILogger, FenrirLogger>()
                 .AddSingleton<NetworkServer>()
                 .AddSingleton<Application>()
+                .AddSingleton<ServerRoomManager<TicTacToeRoom>>()
                 .BuildServiceProvider();
 
             // Get logger
@@ -27,8 +29,6 @@ namespace TicTacToe.Server
 
             // Listen for SIGTERM
             AppDomain.CurrentDomain.ProcessExit += (_, _) => application.Shutdown(0).Wait();
-
-            logger.LogInformation("Running server application");
 
             // Run until shut down
             return await application.Run();

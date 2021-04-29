@@ -1,35 +1,74 @@
+using Fenrir.Multiplayer.Network;
+using Fenrir.Multiplayer.Rooms;
 using Fenrir.Multiplayer.Server;
-using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using TicTacToe.Shared;
 
 namespace TicTacToe.Server
 {
-    class Application
+    class Application : IRequestHandlerAsync<TicTacToeMoveRequest, TicTacToeMoveResponse>
     {
-        private readonly ILogger<Application> _logger;
+        private readonly FenrirLogger _logger;
         private readonly NetworkServer _networkServer;
+        private readonly ServerRoomManager<TicTacToeRoom> _roomManager;
 
         TaskCompletionSource<int> _runTcs = new TaskCompletionSource<int>();
 
-        public Application(ILogger<Application> logger, NetworkServer networkServer)
+        public Application(FenrirLogger fenrirLogger, NetworkServer networkServer, ServerRoomManager<TicTacToeRoom> roomManager)
         {
-            _logger = logger;
+            _logger = fenrirLogger;
             _networkServer = networkServer;
+            _roomManager = roomManager;
         }
 
         public Task<int> Run()
         {
+            // Add TicTacToe room management
+            _networkServer.AddRooms(CreateNewTicTacToeRoom);
+
+            // Start server
             _networkServer.Start();
+
+            _logger.Info("Started server application");
+
             return _runTcs.Task;
+        }
+
+        private TicTacToeRoom CreateNewTicTacToeRoom(IServerPeer peer, string roomId, string joinToken)
+        {
+            // Do not check join token or room id
+            return new TicTacToeRoom(_logger, roomId);
         }
 
         public Task Shutdown(int exitCode)
         {
-            _logger.LogInformation("Shutting down");
+            _logger.Info("Shutting down");
             _runTcs.SetResult(exitCode);
 
             // Graceful shutdown: wait for all players to disconnect
             return Task.CompletedTask; 
         }
+
+        #region Request Handlers
+        async Task<TicTacToeMoveResponse> IRequestHandlerAsync<TicTacToeMoveRequest, TicTacToeMoveResponse>.HandleRequestAsync(TicTacToeMoveRequest request, IServerPeer peer)
+        {
+            TaskCompletionSource<TicTacToeMoveResponse> tcs = new TaskCompletionSource<TicTacToeMoveResponse>();
+
+            // Get player
+            if (peer.PeerData == null)
+            {
+                // Not in the room
+                return new TicTacToeMoveResponse() { Success = false };
+            }
+            var player = (TicTacToePlayer)peer.PeerData;
+
+            // Get room
+            var room = player.Room;
+
+            // Dispatch message to the room
+            TicTacToeMoveResponse response = await room.DispatchMoveRequestAsync(request, player);
+            return response;
+        }
+        #endregion
     }
 }
