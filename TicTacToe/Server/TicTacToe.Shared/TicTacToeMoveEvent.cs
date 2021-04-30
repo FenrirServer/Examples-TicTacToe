@@ -16,7 +16,7 @@ namespace TicTacToe.Shared
         /// <summary>
         /// If true, player did not make the move in time
         /// </summary>
-        public bool IsTimeout { get; set; }
+        public bool Skipped { get; set; }
 
         /// <summary>
         /// Move position on the board.

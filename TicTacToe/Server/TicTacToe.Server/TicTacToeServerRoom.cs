@@ -3,14 +3,15 @@ using Fenrir.Multiplayer.Network;
 using Fenrir.Multiplayer.Rooms;
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using TicTacToe.Shared;
 
 namespace TicTacToe.Server
 {
-    class TicTacToeRoom : ServerRoom
+    class TicTacToeServerRoom : ServerRoom
     {
-        // Seconds to make a move
+        /// <summary>
+        /// Number of seconds per move
+        /// </summary>
         private const float SecondsPerMove = 5;
 
         /// <summary>
@@ -33,13 +34,13 @@ namespace TicTacToe.Server
         /// </summary>
         private int _currentMoveNumber = 0;
 
-
         /// <summary>
         /// Current player
         /// </summary>
-        private TicTacToePlayer _currentPlayer = null;
+        private TicTacToeServerPlayer _currentPlayer = null;
 
-        public TicTacToeRoom(ILogger logger, string roomId)
+
+        public TicTacToeServerRoom(ILogger logger, string roomId)
             : base(logger, roomId)
         {
             // Constructor...
@@ -69,10 +70,10 @@ namespace TicTacToe.Server
 
             string playerName = token; // Use join token as a name ;)
 
-            var player = new TicTacToePlayer(peer, this, playerName);
+            var player = new TicTacToeServerPlayer(peer, this, playerName);
             peer.PeerData = player;
 
-            // If both players join, start game
+            // If both players join, start the game
             if(Peers.Count > 1)
             {
                 StartGame();
@@ -83,21 +84,38 @@ namespace TicTacToe.Server
         {
             // This method is called peer leaves the room, or disconnects
 
-            var player = (TicTacToePlayer)peer.PeerData;
+            var player = (TicTacToeServerPlayer)peer.PeerData;
 
-            // Force finish the game
+            // One player left during the game, force finish
             if(_gameState == GameState.Started)
             {
                 var otherPeer = Peers.Values.Where(p => p != peer).First();
-                var otherPlayer = (TicTacToePlayer)otherPeer.PeerData;
-                FinishGame(otherPlayer);
+                var otherPlayer = (TicTacToeServerPlayer)otherPeer.PeerData;
+                FinishGame(false, otherPlayer);
             }
         }
 
-        private TicTacToePlayer[] GetPlayers()
+        public TicTacToeMoveResponse DispatchMoveRequest(TicTacToeMoveRequest moveRequest, TicTacToeServerPlayer player)
         {
-            TicTacToePlayer[] players = Peers.Values.Select(peer => peer.PeerData)
-                .Cast<TicTacToePlayer>()
+            // This method is called from the Application class
+
+            // Check if move is valid
+            if (_gameState != GameState.Started || _currentPlayer != player || _board[moveRequest.Position] != default(char))
+            {
+                return new TicTacToeMoveResponse() { Success = false };
+            }
+
+            // Do the move
+            ProcessMove(moveRequest.Position, false);
+            return new TicTacToeMoveResponse() { Success = true };
+        }
+
+        private TicTacToeServerPlayer[] GetPlayers()
+        {
+            // Helper method to get array of TicTacToe players
+
+            TicTacToeServerPlayer[] players = Peers.Values.Select(peer => peer.PeerData)
+                .Cast<TicTacToeServerPlayer>()
                 .ToArray();
 
             return players;
@@ -120,9 +138,7 @@ namespace TicTacToe.Server
             _currentPlayer = player1.PieceType == 'x' ? player1 : player2;
 
             // Send out game started event
-            var player1Reference = new TicTacToePlayerReference() { PeerId = player1.Peer.Id, Name = player1.Name, IsX = player1.IsX };
-            var player2Reference = new TicTacToePlayerReference() { PeerId = player2.Peer.Id, Name = player2.Name, IsX = player2.IsX };
-            var gameStartedEvent = new TicTacToeGameStartEvent() { Player1 = player1Reference, Player2 = player2Reference, SecondsPerMove = SecondsPerMove };
+            var gameStartedEvent = new TicTacToeGameStartEvent() { Player1 = player1.GetPlayerReference(), Player2 = player2.GetPlayerReference(), SecondsPerMove = SecondsPerMove };
             BroadcastEvent<TicTacToeGameStartEvent>(gameStartedEvent);
 
             // Schedule move timeout
@@ -142,33 +158,45 @@ namespace TicTacToe.Server
                 return; // Move already ended (player made a move before timer expired)
             }
 
-            EndMove(true, 0);
+            ProcessMove(0, true); // Timed out, skip this move
         }
 
-        private void EndMove(bool isTimeout, byte position)
+        private void ProcessMove(byte position, bool skipMove)
         {
             var players = GetPlayers();
+            var pieceType = _currentPlayer.PieceType;
+
+            // Set board position
+            if (!skipMove)
+            {
+                _board[position] = pieceType;
+            }
+
+            // Check if game has ended
+            if(IsWinningMove(position, pieceType))
+            {
+                FinishGame(false, _currentPlayer); // Winner
+                return;
+            }
+            else if (_currentMoveNumber == 9)
+            {
+                FinishGame(true, null); // Draw
+                return;
+            }
+
+            // Switch to next move 
+            _currentMoveNumber++;
+            _currentPlayer = _currentPlayer == players[0] ? players[1] : players[0];
+
 
             // Broadcast move end event
-            var moveEndEvent = new TicTacToeMoveEvent() { MoveNumber = _currentMoveNumber, IsTimeout = isTimeout, PieceType = _currentPlayer.PieceType, Position = position };
+            var moveEndEvent = new TicTacToeMoveEvent() { MoveNumber = _currentMoveNumber, Skipped = skipMove, PieceType = _currentPlayer.PieceType, Position = position };
             BroadcastEvent<TicTacToeMoveEvent>(moveEndEvent);
 
             // Check if game has ended
-
-
-            _currentMoveNumber++; // Next move
-            _currentPlayer = _currentPlayer == players[0] ? players[1] : players[0]; // Swap current player
-
             ScheduleMoveTimeout();
         }
 
-        private bool MakeMove(TicTacToeMoveRequest moveRequest, TicTacToePlayer player)
-        {
-            if(_board[moveRequest.Position] != default(char))
-            {
-                return false; // Move already made
-            }
-        }
 
         private bool IsWinningMove(int position, char pieceType)
         {
@@ -221,28 +249,11 @@ namespace TicTacToe.Server
             return false;
         }
 
-
-        private void FinishGame(TicTacToePlayer winner)
+        private void FinishGame(bool isDraw, TicTacToeServerPlayer winner)
         {
             _gameState = GameState.Finished;
-
-            var winnerReference = new TicTacToePlayerReference() { PeerId = winner.Peer.Id, Name = winner.Name, IsX = winner.IsX };
-            var finishEvent = new TicTacToeGameFinishEvent() { Winner = winnerReference };
+            var finishEvent = new TicTacToeGameFinishEvent() { IsDraw = isDraw, Winner = winner?.GetPlayerReference() };
             BroadcastEvent<TicTacToeGameFinishEvent>(finishEvent);
-        }
-
-
-        public Task<TicTacToeMoveResponse> DispatchMoveRequestAsync(TicTacToeMoveRequest moveRequest, TicTacToePlayer player)
-        {
-            TaskCompletionSource<TicTacToeMoveResponse> tcs = new TaskCompletionSource<TicTacToeMoveResponse>();
-
-            Enqueue(() =>
-            {
-                bool success = MakeMove(moveRequest, player);
-                tcs.SetResult(new TicTacToeMoveResponse() { Success = success });
-            });
-
-            return tcs.Task;
         }
 
         enum GameState

@@ -1,8 +1,9 @@
 ﻿using Fenrir.Multiplayer.Network;
+using TicTacToe.Shared;
 
 namespace TicTacToe.Server
 {
-    class TicTacToePlayer
+    class TicTacToeServerPlayer
     {
         /// <summary>
         /// Connection peer
@@ -13,7 +14,7 @@ namespace TicTacToe.Server
         /// Room that this player is assigned to.
         /// Currently player can only be in one room
         /// </summary>
-        public TicTacToeRoom Room { get; private set; }
+        public TicTacToeServerRoom Room { get; private set; }
 
         /// <summary>
         /// Name of the player
@@ -25,11 +26,16 @@ namespace TicTacToe.Server
         /// </summary>
         public char PieceType { get; set; }
 
-        public TicTacToePlayer(IServerPeer peer, TicTacToeRoom room, string name)
+        public TicTacToeServerPlayer(IServerPeer peer, TicTacToeServerRoom room, string name)
         {
             Peer = peer;
             Room = room;
             Name = name;
+        }
+
+        public TicTacToePlayerReference GetPlayerReference()
+        {
+            return new TicTacToePlayerReference() { PeerId = Peer.Id, Name = Name, PieceType = PieceType };
         }
     }
 }

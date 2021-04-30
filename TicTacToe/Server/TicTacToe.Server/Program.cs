@@ -17,7 +17,7 @@ namespace TicTacToe.Server
                 .AddSingleton<Fenrir.Multiplayer.Logging.ILogger, FenrirLogger>()
                 .AddSingleton<NetworkServer>()
                 .AddSingleton<Application>()
-                .AddSingleton<ServerRoomManager<TicTacToeRoom>>()
+                .AddSingleton<ServerRoomManager<TicTacToeServerRoom>>()
                 .BuildServiceProvider();
 
             // Get logger

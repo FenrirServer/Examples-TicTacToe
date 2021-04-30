@@ -9,18 +9,33 @@ namespace TicTacToe.Shared
     public class TicTacToeGameFinishEvent : IEvent, IByteStreamSerializable
     {
         /// <summary>
+        /// If true, game ended with a draw
+        /// </summary>
+        public bool IsDraw { get; set; }
+
+        /// <summary>
         /// Reference to the play who won the game
         /// </summary>
         public TicTacToePlayerReference Winner { get; set; }
 
         void IByteStreamSerializable.Deserialize(IByteStreamReader reader)
         {
-            Winner = reader.Read<TicTacToePlayerReference>();
+            IsDraw = reader.ReadBool();
+
+            if (!IsDraw) 
+            {
+                Winner = reader.Read<TicTacToePlayerReference>();
+            }
         }
 
         void IByteStreamSerializable.Serialize(IByteStreamWriter writer)
         {
-            writer.Write(Winner);
+            writer.Write(IsDraw);
+
+            if (!IsDraw)
+            {
+                writer.Write(Winner);
+            }
         }
     }
 }

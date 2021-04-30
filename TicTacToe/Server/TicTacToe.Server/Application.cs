@@ -10,11 +10,11 @@ namespace TicTacToe.Server
     {
         private readonly FenrirLogger _logger;
         private readonly NetworkServer _networkServer;
-        private readonly ServerRoomManager<TicTacToeRoom> _roomManager;
+        private readonly ServerRoomManager<TicTacToeServerRoom> _roomManager;
 
         TaskCompletionSource<int> _runTcs = new TaskCompletionSource<int>();
 
-        public Application(FenrirLogger fenrirLogger, NetworkServer networkServer, ServerRoomManager<TicTacToeRoom> roomManager)
+        public Application(FenrirLogger fenrirLogger, NetworkServer networkServer, ServerRoomManager<TicTacToeServerRoom> roomManager)
         {
             _logger = fenrirLogger;
             _networkServer = networkServer;
@@ -34,10 +34,10 @@ namespace TicTacToe.Server
             return _runTcs.Task;
         }
 
-        private TicTacToeRoom CreateNewTicTacToeRoom(IServerPeer peer, string roomId, string joinToken)
+        private TicTacToeServerRoom CreateNewTicTacToeRoom(IServerPeer peer, string roomId, string joinToken)
         {
             // Do not check join token or room id
-            return new TicTacToeRoom(_logger, roomId);
+            return new TicTacToeServerRoom(_logger, roomId);
         }
 
         public Task Shutdown(int exitCode)
@@ -60,13 +60,13 @@ namespace TicTacToe.Server
                 // Not in the room
                 return new TicTacToeMoveResponse() { Success = false };
             }
-            var player = (TicTacToePlayer)peer.PeerData;
+            var player = (TicTacToeServerPlayer)peer.PeerData;
 
             // Get room
             var room = player.Room;
 
             // Dispatch message to the room
-            TicTacToeMoveResponse response = await room.DispatchMoveRequestAsync(request, player);
+            TicTacToeMoveResponse response = await room.ExecuteAsync<TicTacToeMoveResponse>(() => room.DispatchMoveRequest(request, player));
             return response;
         }
         #endregion
