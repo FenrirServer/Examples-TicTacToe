@@ -1,4 +1,4 @@
-﻿using Fenrir.Multiplayer.Network;
+﻿using Fenrir.Multiplayer;
 using TicTacToe.Shared;
 
 namespace TicTacToe.Server

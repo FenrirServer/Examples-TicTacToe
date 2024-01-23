@@ -1,6 +1,5 @@
-using Fenrir.Multiplayer.Network;
+using Fenrir.Multiplayer;
 using Fenrir.Multiplayer.Rooms;
-using Fenrir.Multiplayer.Server;
 using System.Threading.Tasks;
 using TicTacToe.Shared;
 
@@ -10,21 +9,22 @@ namespace TicTacToe.Server
     {
         private readonly FenrirLogger _logger;
         private readonly NetworkServer _networkServer;
-        private readonly ServerRoomManager<TicTacToeServerRoom> _roomManager;
 
         TaskCompletionSource<int> _runTcs = new TaskCompletionSource<int>();
 
-        public Application(FenrirLogger fenrirLogger, NetworkServer networkServer, ServerRoomManager<TicTacToeServerRoom> roomManager)
+        public Application(FenrirLogger fenrirLogger, NetworkServer networkServer)
         {
             _logger = fenrirLogger;
             _networkServer = networkServer;
-            _roomManager = roomManager;
         }
 
         public Task<int> Run()
         {
             // Add TicTacToe room management
             _networkServer.AddRooms(CreateNewTicTacToeRoom);
+
+            // Add request handlers
+            _networkServer.AddRequestHandlerAsync<TicTacToeMoveRequest, TicTacToeMoveResponse>(this);
 
             // Start server
             _networkServer.Start();

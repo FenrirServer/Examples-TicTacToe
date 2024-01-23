@@ -1,5 +1,4 @@
-﻿using Fenrir.Multiplayer.Network;
-using Fenrir.Multiplayer.Serialization;
+﻿using Fenrir.Multiplayer;
 
 namespace TicTacToe.Shared
 {
@@ -18,23 +17,16 @@ namespace TicTacToe.Shared
         /// </summary>
         public TicTacToePlayerReference Player2 { get; set; }
 
-        /// <summary>
-        /// Seconds allowed per move
-        /// </summary>
-        public float SecondsPerMove { get; set; }
-
         void IByteStreamSerializable.Deserialize(IByteStreamReader reader)
         {
             Player1 = reader.Read<TicTacToePlayerReference>();
             Player2 = reader.Read<TicTacToePlayerReference>();
-            SecondsPerMove = reader.ReadFloat();
         }
 
         void IByteStreamSerializable.Serialize(IByteStreamWriter writer)
         {
             writer.Write(Player1);
             writer.Write(Player2);
-            writer.Write(SecondsPerMove);
         }
     }
 }

@@ -1,5 +1,5 @@
 using Fenrir.Multiplayer.Rooms;
-using Fenrir.Multiplayer.Server;
+using Fenrir.Multiplayer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -14,10 +14,10 @@ namespace TicTacToe.Server
             // Dependency injection
             var serviceProvider = new ServiceCollection()
                 .AddLogging(logging => logging.AddConsole())
-                .AddSingleton<Fenrir.Multiplayer.Logging.ILogger, FenrirLogger>()
+                .AddSingleton<Fenrir.Multiplayer.ILogger, FenrirLogger>()
+                .AddSingleton<FenrirLogger>()
                 .AddSingleton<NetworkServer>()
                 .AddSingleton<Application>()
-                .AddSingleton<ServerRoomManager<TicTacToeServerRoom>>()
                 .BuildServiceProvider();
 
             // Get logger

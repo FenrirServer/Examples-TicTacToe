@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TicTacToe.Server": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

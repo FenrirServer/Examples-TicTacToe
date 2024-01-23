@@ -1,5 +1,4 @@
-﻿using Fenrir.Multiplayer.Network;
-using Fenrir.Multiplayer.Serialization;
+﻿using Fenrir.Multiplayer;
 
 namespace TicTacToe.Shared
 {
@@ -12,11 +11,6 @@ namespace TicTacToe.Shared
         /// Number of the move
         /// </summary>
         public int MoveNumber { get; set; }
-
-        /// <summary>
-        /// If true, player did not make the move in time
-        /// </summary>
-        public bool Skipped { get; set; }
 
         /// <summary>
         /// Move position on the board.

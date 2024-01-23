@@ -5,7 +5,7 @@ namespace TicTacToe.Server
     /// <summary>
     /// Helper class to allow Fenrir to log via Microsoft.Extensions.Logging
     /// </summary>
-    class FenrirLogger : Fenrir.Multiplayer.Logging.ILogger
+    class FenrirLogger : Fenrir.Multiplayer.ILogger
     {
         private readonly ILogger _logger;
 
