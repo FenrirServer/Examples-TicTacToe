@@ -23,6 +23,8 @@ This project uses several Requests, Responses and Events (see: [Networking Basic
  ┣ 📂 Library
  ┣ 📂 ProjectSettings
  ┣ 📂 Assets
+   ┣ 📂 Scenes
+     ┗ 📄 TicTacToe.unity                   ← Tic-tac-toe Scene
    ┗ 📂 Source
      ┗ 📄 TicTacToeBehaviour.cs             ← Tic-tac-toe Unity Client implementation
  ┣ 📁Server
